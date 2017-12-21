@@ -1,0 +1,4 @@
+- hosts: consul_servers:local
+  roles:
+  - role: ../../roles/vault
+  

@@ -1,6 +1,7 @@
 ---
 - include: roles/common.yml
 - include: roles/consul.yml
+- include: roles/vault.yml
 - include: roles/nfs_servers.yml
 - include: roles/storage_client.yml
 - include: roles/database_servers.yml
