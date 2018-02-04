@@ -89,6 +89,8 @@
   - bsd-mailx
   - unzip
   - patch
+  - mlock
+  - libcap2-bin
 
 - name: Install python-pyOpenSSL version {{ required_pyopenssl_version }}
   pip: 
