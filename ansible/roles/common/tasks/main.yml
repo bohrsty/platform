@@ -91,6 +91,7 @@
   - patch
   - mlock
   - libcap2-bin
+  - curl
 
 - name: Install python-pyOpenSSL version {{ required_pyopenssl_version }}
   pip: 
