@@ -155,5 +155,24 @@
 - name: Configure firewall to allow Docker containers access to the host
   ufw: rule=allow interface=docker0 direction=in
 
+- name: Run Vault-UI on Single servers and Consul servers on clusters
+  when: ansible_play_hosts | length() == 1 or 'consul_servers' in group_names
+  docker:
+    name: vault-ui
+    image: "{{ vaultui_container }}"
+    state: reloaded
+    restart_policy: always
+    log_driver: syslog
+    log_opt:
+      tag: vault-ui
+      syslog-facility: local6
+    net: host
+    ports: "8000:8000"
+    volumes: "/var/run/docker.sock:/tmp/docker.sock"
+    env:
+      VAULT_URL_DEFAULT: "https://127.0.0.1:8200"
+      VAULT_AUTH_DEFAULT: "token"
+      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+
 - include: cluster.yml
   when: groups['all'] | length() > 1
