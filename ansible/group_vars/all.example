@@ -12,9 +12,9 @@
 # config_done: true
 
 # Insert your Docker Hub credentials below
-dockerhub_username:
-dockerhub_password:
-dockerhub_email:
+dockerhub_username: "{{ lookup('vault', 'secret/dockerhub/username', 'value') }}"
+dockerhub_password: "{{ lookup('vault', 'secret/dockerhub/password', 'value') }}"
+dockerhub_email: "{{ lookup('vault', 'secret/dockerhub/email', 'value') }}"
 
 # The external fully qualified host name under which the clients can access
 # this server, e.g. "teamwire.example.com"
@@ -87,7 +87,7 @@ allow_unknown_users: no
 allow_user_query: no
 
 # You'll receive this key with your other credentials.
-gcm_api_key:
+gcm_api_key: "{{ lookup('vault', 'secret/keys/gcm', 'value') }}"
 
 # You've received a certificate file with your other credentials. Copy
 # the file to this virtual machine and give the full path to it here,
@@ -140,18 +140,18 @@ apns_certificate:
 ##############################################################################
 
 # Define the database user name. Defaults to 'teamwire'.
-# teamwire_db_user: teamwire
+# teamwire_db_user: "{{ lookup('vault', 'secret/database/username', 'value') }}"
 
 # Define the database user password
-teamwire_db_password: teamwire
+teamwire_db_password: "{{ lookup('vault', 'secret/database/password', 'value') }}"
 
 # Define the database name. Defaults to 'teamwire'.
-# teamwire_db_name: teamwire
+# teamwire_db_name: "{{ lookup('vault', 'secret/database/name', 'value') }}"
 
 # Define the database encryption key.
 # This key must be 32 byte (i.e. 256 bit) long and must only contain ASCII
 # characters (i.e. unicode characters are not allowed).
-aes_key:
+aes_key: "{{ lookup('vault', 'secret/database/aes_key', 'value') }}"
 
 # If you don't want to run the MySQL server on this machine, you can set these
 # values to the settings that point to your external MySQL server.
@@ -165,15 +165,15 @@ aes_key:
 # When running the MySQL database on the same machine or as part of the cluster,
 # you *must* configure a password for the DB's root user here, otherwise you can
 # leave this this line commented.
-mysql_root_password:
+mysql_root_password: "{{ lookup('vault', 'secret/dbserver/mysql_root_password', 'value') }}"
 
 # When running a clustered MySQL database as part of the cluster, uncomment the
 # following value and specify a password for the database health check user:
-# clustercheck_password:
+# clustercheck_password: "{{ lookup('vault', 'secret/dbserver/clustercheck_password', 'value') }}"
 
 # When running a clustered MySQL database as part of the cluster, uncomment the
 # following line and specify a password for the database replication user:
-# xtrabackup_password:
+# xtrabackup_password: "{{ lookup('vault', 'secret/dbserver/xtrabackup_password', 'value') }}"
 
 # When using an Oracle database, uncomment the following lines and add the
 # values matching your setup.
@@ -190,7 +190,7 @@ mysql_root_password:
 # Configure a password for Redis. This is not required when Redis is running
 # as a single instance on the same machine as the backend, but highly
 # recommended when using a remote Redis server or the clustered Redis.
-# redis_pass:
+# redis_pass: "{{ lookup('vault', 'secret/redis/password', 'value') }}"
 
 ##############################################################################
 ## MAIL
@@ -210,8 +210,8 @@ smtp_smarthost:
 
 # The credentials (user name and password) for the outgoing mail server -
 # if you do not set these values authentication will be disabled.
-smtp_smartuser:
-smtp_smartpass:
+smtp_smartuser: "{{ lookup('vault', 'secret/smtp/username', 'value') }}"
+smtp_smartpass: "{{ lookup('vault', 'secret/smtp/password', 'value') }}"
 
 # The port to connect to. Defaults to 587 (submission)
 smtp_port: 587
