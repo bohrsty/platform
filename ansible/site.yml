@@ -1,4 +1,20 @@
 ---
+- name: Set Vault unseal keys
+  hosts: all
+  vars_prompt:
+    - name: "unseal_key1_input"
+      prompt: "Unseal key 1"
+      private: yes
+      confirm: yes
+    - name: "unseal_key2_input"
+      prompt: "Unseal key 2"
+      private: yes
+      confirm: yes
+  tasks:
+    - set_fact:
+        unseal_key1: "{{ unseal_key1_input }}"
+        unseal_key2: "{{ unseal_key2_input }}"
+
 - name: Apply common configuration to all nodes
   hosts: all
   roles:
