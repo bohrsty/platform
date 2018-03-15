@@ -7,13 +7,12 @@ storage "file" {
 storage "consul" {
   address = "127.0.0.1:8500"
   path = "vault"
-  advertise_addr = "https://{{ private_ip }}:8200"
 }
 cluster_name = "Vault Cluster"
 {%endif %}
 
 listener "tcp" {
- address = "127.0.0.1:8200"
+ address = "0.0.0.0:8200"
  tls_disable = {{ "0" if vault_bootstrapped.stat.exists == true else "1" }}
 {% if vault_bootstrapped.stat.exists == true %}
  tls_cert_file = "/var/lib/vault/ssl/vault.crt"
