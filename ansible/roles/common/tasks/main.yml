@@ -106,7 +106,3 @@
   when:
   - ansible_distribution|lower != "centos"
   - groups['all'] | length() > 1
-
-- name: die
-  fail:
-    msg: died

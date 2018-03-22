@@ -1,18 +1,51 @@
 ---
 - name: Create local storage directory / NFS mount point
-  file: path=/data owner=root group=root mode=0755 state=directory
+  file:
+    path: /data
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
 
 # Mount external storage
-- name: Install NFS client
+- name: Install NFS client (non CentOS)
   apt: pkg=nfs-common state=present
-  when: external_storage_path is defined or ('nfs_servers' in groups and groups['nfs_servers'] | length == 1)
+  when:
+  - external_storage_path is defined or ('nfs_servers' in groups and groups['nfs_servers'] | length == 1)
+  - ansible_distribution|lower != "centos"
 
-- name: Install GlusterFS client
+- name: Install NFS client (CentOS)
+  yum:
+    name: nfs-utils
+    state: present
+  when:
+  - external_storage_path is defined or ('nfs_servers' in groups and groups['nfs_servers'] | length == 1)
+  - ansible_distribution|lower == "centos"
+
+- name: Install GlusterFS client (non CentOS)
   apt: pkg=glusterfs-client state=present
-  when: external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length > 1
+  when:
+  - external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length > 1
+  - ansible_distribution|lower != "centos"
+
+- name: Install GlusterFS client (CentOS)
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - glusterfs
+  - glusterfs-fuse
+  - attr
+  when:
+  - external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length > 1
+  - ansible_distribution|lower == "centos"
 
 - name: Mount NFS share (external)
-  mount: name=/data fstype=nfs src="{{ external_storage_path }}" state=mounted
+  mount: 
+    name: /data
+    fstype: nfs
+    src: "{{ external_storage_path }}"
+    state: mounted
   when: external_storage_path is defined
 
 - name: Configure NFSv4 ID mapping domain
@@ -47,3 +80,7 @@
     opts: "{% for host in groups['nfs_servers'][1:] %}backupvolfile-server={{host}},{% endfor %}direct-io-mode=disable"
     state: mounted
   when: external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length > 1 and not inventory_hostname in groups['nfs_servers']
+
+- name: die
+  fail:
+    msg: died
