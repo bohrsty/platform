@@ -25,6 +25,12 @@ external_hostname:
 # out of the server.
 # ssh_disable_passwords: True
 
+# CentOS only!
+# If you not allow unattended (security) upgrades, uncomment this to disable
+# them. If enabled yum-cron is configured to only install critical security
+# updates (yum --sec-severity=Critical update-minimal).
+# disable_unattended_upgrades: True
+
 # If you need a proxy for outgoing connections, you can uncomment the following
 # line and adapt it to your environment. The proxy server must also support
 # HTTPS.
@@ -51,6 +57,11 @@ external_hostname:
 #   - ptbtime1.ptb.de
 #   - ptbtime2.ptb.de
 #   - ptbtime3.ptb.de
+
+# CentOS only!
+# Define ethernet connection name for use with NetworkManager. The default
+# connection name is eth0, if not defined different here.
+# eth_conn_name: eth0
 
 # DNS server
 # If you do not use DHCP to configure the network, you can uncomment the

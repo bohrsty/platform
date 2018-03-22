@@ -2,152 +2,32 @@
 - name: Check Ansible version
   fail:
     msg:
-      - "Ansible {{ required_ansible_version }} is required, please run the upgrade procedure"
-      - "If running a single-server setup, run: ansible-playbook -i hosts playbooks/procedures/upgrade-ansible.yml"
-      - "If running a clustered-server setup, run: ansible-playbook -i cluster_hosts playbooks/procedures/upgrade-ansible.yml"
-  when: ansible_version['full'] != required_ansible_version
-
-- name: Configure proxy for apt
-  when: http_proxy is defined
-  template: src=apt.proxy.conf.j2 dest=/etc/apt/apt.conf.d/01proxy
-
-- name: Remove apt proxy configuration when no proxy is configured
-  when: http_proxy is not defined
-  file: dest=/etc/apt/apt.conf.d/01proxy state=absent
-
-- name: Ensure backports are enabled (Debian 8)
-  apt_repository:
-    repo: 'deb http://ftp.hosteurope.de/mirror/ftp.debian.org/debian/ jessie-backports main'
-    state: present
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'jessie'
-
-- name: Create rc.local for Debian 9
-  when: ansible_distribution == "Debian" and ansible_distribution_release == 'stretch'
-  template:
-    src: rc.local.j2
-    dest: /etc/rc.local
-    owner: root
-    mode: 700
+      - "Ansible >= 2.4.2 is required"
+  when:
+    - ansible_version['major'] < 2
+    - ansible_version['minor'] < 4
+    - ansible_version['revision'] < 2
 
 - name: Check if installing offline
   stat: path=/etc/offline_installation
   register: offline_mode
 
-- name: apt-get update
-  apt: update_cache=yes
-  when: not offline_mode.stat.exists
+- include: centos.yml
+  when: ansible_distribution|lower == "centos"
 
-# do security upgrades
-- name: Install unattended-upgrades
-  apt: pkg=unattended-upgrades state=present
-
-# Debian comes with sane defaults
-- name: Make sure unattended-upgrades only installs from $ubuntu_release-security
-  lineinfile:
-    dest: /etc/apt/apt.conf.d/50unattended-upgrades
-    regexp: "$ubuntu_release-updates"
-    state: absent
-  when: ansible_distribution == "Ubuntu"
-
-- name: Mail root on unattended-upgrades
-  lineinfile:
-    dest: /etc/apt/apt.conf.d/50unattended-upgrades
-    regexp: '^//Unattended-Upgrade::Mail "root";'
-    line: 'Unattended-Upgrade::Mail "root";'
-    backrefs: yes
-
-- name: Configure unattended-upgrade
-  copy:
-    src: 02periodic
-    dest: /etc/apt/apt.conf.d/02periodic
-  when: config_done is defined and not offline_mode.stat.exists
-
-- name: Automatically remove obsolete packages
-  copy:
-    src: apt-autoremove
-    dest: /etc/cron.daily/apt-autoremove
-    mode: 0755
-
-# unattanded-upgrades sometimes lock APT for a long time
-- name: Wait for APT to be available
-  shell: while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 1; done;
-  become: yes
-
-- name: Install useful tools
-  apt: name={{item}} state=present
-  with_items:
-  - htop
-  - sysstat
-  - iotop
-  - glances
-  - mc
-  - zile
-  - vim
-  - nano
-  - haveged
-  - ldap-utils
-  - bsd-mailx
-  - unzip
-  - patch
+- include: non_centos.yml
+  when: ansible_distribution|lower != "centos"
 
 - name: Install python-pyOpenSSL version {{ required_pyopenssl_version }}
   pip: 
-    name=pyopenssl
-    version={{ required_pyopenssl_version }}
-    extra_args={{ "--proxy="+http_proxy if http_proxy is defined else omit }}
-
-- name: Remove useless packages
-  apt: pkg={{item}} state=absent purge=yes
-  with_items:
-  - mlocate # sucks IO heavily
-
-# Configure system-wide proxy
-- name: Enable system-wide proxy (HTTP)
-  lineinfile: dest=/etc/environment line="http_proxy={{http_proxy}}"
-  when: http_proxy is defined
-
-- name: Disable system-wide proxy when no proxy is configured (HTTP)
-  lineinfile: dest=/etc/environment regexp="^http_proxy=" state=absent
-  when: http_proxy is not defined
-
-- name: Enable system-wide proxy (HTTPS)
-  lineinfile: dest=/etc/environment line="https_proxy={{http_proxy}}"
-  when: http_proxy is defined
-
-- name: Disable system-wide proxy when no proxy is configured (HTTPS)
-  lineinfile:
-    dest: /etc/environment
-    regexp: ^https_proxy=
-    state: absent
-  when: http_proxy is not defined
-
-- name: Don't access localhost and local services via proxy
-  lineinfile:
-    dest: /etc/environment
-    line: "no_proxy=localhost,127.0.0.1,{{ inventory_hostname }},.consul"
-  when: http_proxy is defined
-
-- name: Set hostname
-  when: config_done is defined or inventory_hostname not in ignore_hostnames
-  hostname: name="{{ inventory_hostname if inventory_hostname not in ignore_hostnames else external_hostname }}"
-
-- name: Add hostname to localhost
-  when: config_done is defined
-  lineinfile:
-    dest: /etc/hosts
-    regexp: ^127\.0\.0\.1\s+localhost
-    line: "127.0.0.1 localhost {{ external_hostname }}"
-
-- name: Configure DNS servers
-  template: src=resolv.conf.j2 dest=/etc/resolv.conf
-  when: dns_servers is defined and "consul_servers" not in groups
-
-# send outgoing mail over smarthost
-- name: Install Postfix
-  apt: pkg=postfix
+    name: pyopenssl
+    version: "{{ required_pyopenssl_version }}"
+    extra_args: '{{ "--proxy="+http_proxy if http_proxy is defined else omit }}'
 
 - name: Write the Postfix configuration file
-  template: src=postfix-main.cf.j2 dest=/etc/postfix/main.cf
+  template:
+    src: postfix-main.cf.j2
+    dest: /etc/postfix/main.cf
   when: config_done is defined
   notify: restart postfix
 
@@ -161,34 +41,10 @@
 
 - name: Give root a speaking name
   when: config_done is defined
-  user: name=root comment="root@{{ external_hostname }}"
+  user:
+    name: root
+    comment: "root@{{ external_hostname }}"
 
-# install ntp and set timezone to UTC
-- name: Set timezone to UTC
-  copy: content="Etc/UTC\n" dest=/etc/timezone
-  notify: update timezone
-
-- name: Install the NTP daemon
-  apt: pkg=ntp
-
-- name: Enable and start the NTP daemon
-  service: name=ntp state=started enabled=true
-
-- name: Write NTP configuration file
-  template: src=ntp.conf.j2 dest=/etc/ntp.conf
-  notify: restart NTP
-
-# general firewall rules
-- name: Install the UFW firewall
-  apt: pkg=ufw state=present
-
-- name: Allow incoming SSH access
-  ufw: rule=allow name=OpenSSH
-
-- name: Configure default firewall policy
-  ufw: state=enabled policy=reject
-
-# SSH
 - name: Disable SSH password logins
   when: ssh_disable_passwords is defined and ssh_disable_passwords
   lineinfile:
@@ -211,11 +67,6 @@
     line: "UseDNS no"
   notify: reload sshd
 
-# Keep track of the plattform repository
-- name: Install git
-  apt: pkg=git state=present
-  when: groups['all'] | length() == 1
-
 - name: Check out the teamwire/platform git repository
   git:
     repo: https://github.com/teamwire/platform.git
@@ -237,21 +88,11 @@
     group: teamwire
   when: config_file.stat.exists
 
-# Prepare tmate usage
-# It needs any ssh key for the calling user to function
 - name: Create SSH keys for the teamwire user
-  user: name=teamwire generate_ssh_key=yes
+  user:
+    name: teamwire
+    generate_ssh_key: yes
   when: config_done is defined
-
-# Install tmate
-- name: Configure the tmate repository (Ubuntu)
-  apt_repository: repo=ppa:nviennot/tmate
-  when: ansible_distribution == "Ubuntu"
-- name: Install tmate
-  apt: pkg=tmate
-
-- name: Ensure rsyslog is installed
-  apt: pkg=rsyslog
 
 - name: Send all logs to loghost or remote syslog servers
   when: "'loghost' in groups or syslog_servers is defined"
@@ -262,4 +103,10 @@
     - restart rsyslog
 
 - include: cluster.yml
-  when: groups['all'] | length() > 1
+  when:
+  - ansible_distribution|lower != "centos"
+  - groups['all'] | length() > 1
+
+- name: die
+  fail:
+    msg: died

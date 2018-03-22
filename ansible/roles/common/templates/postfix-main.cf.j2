@@ -1,4 +1,4 @@
-smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
+smtpd_banner = $myhostname ESMTP $mail_name ({% if ansible_distribution=="CentOS" %}CentOS{% else %}Ubuntu{% endif %})
 biff = no
 append_dot_mydomain = no
 readme_directory = no
@@ -19,7 +19,7 @@ inet_interfaces = all
 
 # SMTP relay
 relayhost = [{{smtp_smarthost}}]:{{smtp_port|default('587')}}
-smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+smtp_tls_CAfile = /etc/ssl/certs/ca-{% if ansible_distribution=="CentOS" %}bundle{% else %}certificates{% endif %}.crt
 smtp_use_tls = {% if smtp_use_tls is defined and not smtp_use_tls %}no{% else %}yes{% endif %}
 
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
