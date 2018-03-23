@@ -25,6 +25,21 @@
     password: "{{mysql_root_password}}"
   when: mariadb_initial_installation
 
+- name: Remove anonymous user
+  mysql_user:
+    name: ''
+    host_all: yes
+    state: absent
+    login_user: root
+    login_password: "{{mysql_root_password}}"
+
+- name: Remove test database
+  mysql_db:
+    name: test
+    state: absent
+    login_user: root
+    login_password: "{{mysql_root_password}}"
+
 - name: Set password for the other MariaDB root users
   mysql_user:
     name: root
