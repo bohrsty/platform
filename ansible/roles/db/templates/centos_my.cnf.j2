@@ -1,0 +1,40 @@
+[mysqld]
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+
+symbolic-links=0
+
+skip-symbolic-links
+
+skip-show-database
+
+local-infile=0
+
+secure-auth
+
+safe-user-create
+
+secure-file-priv=/root/
+
+slow_query_log = 1
+slow_query_log_file = /var/log/mariadb/mariadb-slow.log
+long_query_time = 1
+log-queries-not-using-indexes
+
+default-time-zone = '+00:00'
+
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+max_allowed_packet = 64M
+max_connections = 512
+
+[mysql]
+default-character-set = utf8mb4
+
+[mysqld_safe]
+log-error=/var/log/mariadb/mariadb.log
+pid-file=/var/run/mariadb/mariadb.pid
+
+!includedir /etc/my.cnf.d
+

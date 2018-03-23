@@ -140,6 +140,7 @@
   - bash-completion
   - bash-completion-extras
   - telnet
+  - net-tools
 
 - name: Remove useless packages
   yum:

@@ -80,7 +80,3 @@
     opts: "{% for host in groups['nfs_servers'][1:] %}backupvolfile-server={{host}},{% endfor %}direct-io-mode=disable"
     state: mounted
   when: external_storage_path is not defined and 'nfs_servers' in groups and groups['nfs_servers'] | length > 1 and not inventory_hostname in groups['nfs_servers']
-
-- name: die
-  fail:
-    msg: died

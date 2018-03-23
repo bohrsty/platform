@@ -1,0 +1,27 @@
+---
+
+- name: Install MariaDB
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - mariadb-server
+  - mariadb-libs
+  - MySQL-python
+  register: mysql_initial_installation
+
+- name: Remember initial installation
+  set_fact:
+    mariadb_initial_installation: "{{ mysql_initial_installation.changed }}"
+
+- name: Create my.cnf
+  template:
+    src: centos_my.cnf.j2
+    dest: /etc/my.cnf
+
+- name: Start and enable MariaDB server
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+
