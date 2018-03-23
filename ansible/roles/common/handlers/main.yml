@@ -8,6 +8,9 @@
 - name: reload sshd
   service: name=ssh state=reloaded
 
+- name: reload sshd centos
+  service: name=sshd state=reloaded
+
 - name: rebuild postfix passwd map
   command: postmap /etc/postfix/sasl/passwd
 
