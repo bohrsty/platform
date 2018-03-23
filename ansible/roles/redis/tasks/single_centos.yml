@@ -1,0 +1,33 @@
+---
+- name: Install Redis server
+  yum:
+    name: redis
+    state: present
+
+- name: Configure Redis to listen on all interfaces
+  lineinfile:
+    dest: /etc/redis.conf
+    regexp: ^bind\s+127.0.0.1
+    line: "bind 0.0.0.0"
+    backrefs: yes
+  notify: restart redis centos
+
+- name: Configure password for Redis
+  lineinfile:
+    dest: /etc/redis.conf
+    regexp: ^(# )+requirepass
+    line: "requirepass {{ redis_pass }}"
+    backrefs: yes
+  when: redis_pass is defined
+  notify: restart redis centos
+
+- name: Start and enable Redis server
+  service:
+    name: redis
+    state: started
+    enabled: yes
+
+- name: die
+  fail:
+    msg: died
+

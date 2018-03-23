@@ -4,6 +4,16 @@
   with_items:
   - redis-tools
   - python-redis
+  when: ansible_distribution|lower != "centos"
+
+- name: Install Redis (CentOS)
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - redis
+  - python-redis
+  when: ansible_distribution|lower == "centos"
 
 # See http://redis.io/topics/faq for details
 - name: Enable vm.overcommit_memory for Redis
@@ -20,8 +30,17 @@
     state: present
     reload: yes
 
-- include: single.yml
-  when: "'redis_servers' not in groups"
+- include: single_non_centos.yml
+  when:
+    - "'redis_servers' not in groups"
+    - ansible_distribution|lower != "centos"
+
+- include: single_centos.yml
+  when:
+    - "'redis_servers' not in groups"
+    - ansible_distribution|lower == "centos"
 
 - include: cluster.yml
-  when: "'redis_servers' in groups"
+  when: 
+    - "'redis_servers' in groups"
+    - ansible_distribution|lower != "centos"
