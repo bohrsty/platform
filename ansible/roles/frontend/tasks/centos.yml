@@ -1,0 +1,73 @@
+---
+- name: Install nginx
+  yum:
+    name: nginx
+    state: present
+
+- name: Configure nginx
+  copy:
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+  notify: reload nginx
+
+- name: Set nginx user
+  lineinfile:
+    path: /etc/nginx/nginx.conf
+    regexp: ^user
+    line: "user nginx;"
+  notify: reload nginx
+
+- name: Create folders for en-/disabling HTTP/HTTPS
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  with_items:
+    - /etc/nginx/sites-available
+    - /etc/nginx/sites-enabled
+  notify: reload nginx
+
+
+- name: Enable HTTP if no SSL certificate is configured
+  firewalld:
+    immediate: true
+    service: http
+    state: enabled
+    permanent: true
+  when:
+    - config_done is defined
+    - ssl_certfile is not defined
+    - ssl_keyfile is not defined
+
+- name: Disable HTTPS if no SSL certificate is configured
+  firewalld:
+    immediate: true
+    service: https
+    state: disabled
+    permanent: true
+  when:
+    - config_done is defined
+    - ssl_certfile is not defined
+    - ssl_keyfile is not defined
+
+- name: Enable HTTPS if SSL certificate is configured
+  firewalld:
+    immediate: true
+    service: https
+    state: enabled
+    permanent: true
+  when:
+    - config_done is defined
+    - ssl_certfile is defined
+    - ssl_keyfile is defined
+
+- name: Disable HTTP if SSL certificate is configured
+  firewalld:
+    immediate: true
+    service: http
+    state: disabled
+    permanent: true
+  when:
+    - config_done is defined
+    - ssl_certfile is defined
+    - ssl_keyfile is defined

@@ -116,8 +116,4 @@
     - groups['database_servers'] | length > 1
     - ansible_distribution | lower != "centos"
 
-- name: die
-  fail:
-    msg: "died {{ ansible_distribution }}"
-
 # The cluster backend deployment is delegated to the nomad servers
