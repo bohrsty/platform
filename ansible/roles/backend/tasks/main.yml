@@ -1,6 +1,16 @@
 ---
+- name: Create group ssl-cert (CentOS)
+  group:
+    name: ssl-cert
+    state: present
+  when: ansible_distribution | lower == centos
+
 - name: Create the backend storage directories
-  file: path=/data/{{ item }} owner=daemon mode=0750 state=directory
+  file: 
+    path: /data/{{ item }}
+    owner: 1
+    mode: 0750
+    state: directory
   when: config_done is defined
   run_once: true
   with_items:
@@ -12,7 +22,7 @@
 - name: Create the backend certificate storage directories
   file:
     path: /data/{{ item }}
-    owner: daemon
+    owner: 1
     group: ssl-cert
     mode: 0750
     state: directory
@@ -23,7 +33,11 @@
     - certs/apns
 
 - name: Create the backend GPG storage directories
-  file: path=/data/archiving/gpg owner=daemon mode=0700 state=directory
+  file:
+    path: /data/archiving/gpg
+    owner: 1
+    mode: 0700
+    state: directory
   when: config_done is defined
   run_once: true
 
@@ -43,7 +57,7 @@
     src: "{{ apns_certificate }}"
     dest: /data/certs/apns/aps-production.pem
     mode: 0440
-    owner: daemon
+    owner: 1
     group: ssl-cert
   when: config_done is defined
   run_once: true
@@ -69,7 +83,7 @@
     src: "{{ apns_certificate_2 }}"
     dest: "/data/certs/apns/{{ apns_certificate_2 | basename }}"
     mode: 0440
-    owner: daemon
+    owner: 1
     group: ssl-cert
   when: apns_certificate_2 is defined
   run_once: true
@@ -78,16 +92,29 @@
 - name: Check if teamwire worker is running
   command: docker ps
   register: docker_procs
-  when: (apns_source.changed or apns2_source.changed) and ansible_play_hosts | length() == 1
+  when:
+    - (apns_source.changed or apns2_source.changed)
+    - ansible_play_hosts | length() == 1
 
 - name: Restart teamwire worker if APNS certificates have been updated and on single-setup
   command: docker restart teamwire_worker
-  when: (apns_source.changed or apns2_source.changed) and ansible_play_hosts | length() == 1 and 'teamwire_worker' in docker_procs.stdout
+  when:
+    - (apns_source.changed or apns2_source.changed)
+    - ansible_play_hosts | length() == 1
+    - "'teamwire_worker' in docker_procs.stdout"
 
 - include: "single_{{ ansible_distribution }}.yml"
   when: "'backend_servers' not in groups"
 
 - include: "haproxy.yml"
-  when: mysql_host is not defined and 'database_servers' in groups and groups['database_servers'] | length > 1
+  when:
+    - mysql_host is not defined
+    - "'database_servers' in groups"
+    - groups['database_servers'] | length > 1
+    - ansible_distribution | lower != "centos"
+
+- name: die
+  fail:
+    msg: "died {{ ansible_distribution }}"
 
 # The cluster backend deployment is delegated to the nomad servers

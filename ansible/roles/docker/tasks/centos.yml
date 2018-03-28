@@ -50,7 +50,3 @@
     permanent: true
     state: enabled
     zone: trusted
-
-- name: die
-  fail:
-    msg: died
