@@ -3,7 +3,7 @@
   group:
     name: ssl-cert
     state: present
-  when: ansible_distribution | lower == centos
+  when: ansible_distribution | lower == "centos"
 
 - name: Create the backend storage directories
   file: 

@@ -1,4 +1,26 @@
 ---
+- name: Ensure rsyslog is installed
+  yum:
+    name: rsyslog
+    state: present
+
+- name: Configure rsyslog for docker containers
+  copy:
+    src: 10-docker.conf
+    dest: /etc/rsyslog.d/10-docker.conf
+  notify: restart rsyslog
+
+- name: Don't log container logs into /var/log/messages
+  lineinfile:
+    dest: /etc/rsyslog.conf
+    regexp: ^\*\.info;mail\.none;authpriv\.none;cron\.none
+    line: "*.info;mail.none;authpriv.none;cron.none;local6.none    /var/log/messages"
+  notify: restart rsyslog
+
+- name: Install logrotate job for container logs
+  copy:
+    src: container-log
+    dest: /etc/logrotate.d/container-log
 
 - name: Install docker and python-docker-py
   yum:
