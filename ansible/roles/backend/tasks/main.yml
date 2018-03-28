@@ -1,4 +1,7 @@
 ---
+- name: Update facts after docker role
+  setup:
+
 - name: Create group ssl-cert (CentOS)
   group:
     name: ssl-cert
