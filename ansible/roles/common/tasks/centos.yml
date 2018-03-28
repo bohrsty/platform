@@ -196,6 +196,7 @@
 
 - name: Allow incoming SSH access
   firewalld:
+    immediate: true
     service: ssh
     state: enabled
     permanent: true

@@ -1,0 +1,56 @@
+---
+
+- name: Install docker and python-docker-py
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - docker
+    - python-docker-py
+
+- name: Enable and start docker
+  service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Create systemd drop-in directory for docker
+  file:
+    name: /etc/systemd/system/docker.service.d
+    state: directory
+
+- name: Start Docker after mounting NFS shares
+  copy:
+    src: wait_for_nfs_centos.conf
+    dest: /etc/systemd/system/docker.service.d/wait_for_nfs.conf
+  notify: reload systemd
+
+# Make sure docker is restarted before the containers are set up, otherwise
+# the restart would kill the running containers. We need to restart before the
+# following step, otherwise the login would fail when a proxy is configured.
+- meta: flush_handlers
+
+- name: Check if installing offline
+  stat: path=/etc/offline_installation
+  register: offline_mode
+
+- name: Log in on Docker Hub
+  docker_login:
+    username: "{{ dockerhub_username }}"
+    password: "{{ dockerhub_password }}"
+    email: "{{ dockerhub_email }}"
+  when:
+    - config_done is defined
+    - not offline_mode.stat.exists
+
+- name: Configure firewall to allow Docker containers access to the host
+  firewalld:
+    immediate: true
+    interface: docker0
+    permanent: true
+    state: enabled
+    zone: trusted
+
+- name: die
+  fail:
+    msg: died
