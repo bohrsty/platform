@@ -83,8 +83,3 @@
   when: 
     - "'frontend_servers' in groups"
     - ansible_distribution | lower != "centos"
-
-- name: die
-  fail:
-    msg: "died {{ ansible_distribution }}"
-
