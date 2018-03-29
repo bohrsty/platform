@@ -30,6 +30,11 @@
     - docker
     - python-docker-py
 
+- name: Disable iptables for Docker to stop it messing up firewall rules
+  copy:
+    src: disable_docker_iptables_centos.json
+    dest: /etc/docker/daemon.json
+
 - name: Enable and start docker
   service:
     name: docker
@@ -46,12 +51,6 @@
     src: wait_for_nfs_centos.conf
     dest: /etc/systemd/system/docker.service.d/wait_for_nfs.conf
   notify: reload systemd
-
-- name: Disable iptables for Docker to stop it messing up firewall rules
-  copy:
-    src: disable_docker_iptables_centos.json
-    dest: /etc/docker/daemon.json
-  notify: restart docker
 
 # Make sure docker is restarted before the containers are set up, otherwise
 # the restart would kill the running containers. We need to restart before the
