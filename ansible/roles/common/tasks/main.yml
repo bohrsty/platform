@@ -51,7 +51,7 @@
     dest: /etc/ssh/sshd_config
     regexp: ^#?PasswordAuthentication
     line: "PasswordAuthentication no"
-  notify: "reload sshd{{ ' centos' if ansible_distribution|lower == 'centos' }}"
+  notify: "reload sshd{{ ' centos' if ansible_distribution|lower == 'centos' else '' }}"
 
 - name: Enable SSH password logins
   when: ssh_disable_passwords is not defined or not ssh_disable_passwords
@@ -59,13 +59,13 @@
     dest: /etc/ssh/sshd_config
     regexp: ^#?PasswordAuthentication
     line: "PasswordAuthentication yes"
-  notify: "reload sshd{{ ' centos' if ansible_distribution|lower == 'centos' }}"
+  notify: "reload sshd{{ ' centos' if ansible_distribution|lower == 'centos' else '' }}"
 
 - name: Disable DNS lookup on SSH login
   lineinfile:
     dest: /etc/ssh/sshd_config
     line: "UseDNS no"
-  notify: "reload sshd{{ ' centos' if ansible_distribution|lower == 'centos' }}"
+  notify: "reload sshd{{ ' centos' if ansible_distribution|lower == 'centos' else '' }}"
 
 - name: Check out the teamwire/platform git repository
   git:
